@@ -2,6 +2,7 @@ classdef Vehicle<handle
     % 車両クラス
     properties(GetAccess = public, SetAccess = private)
         % 車両の基本情報
+        VEHICLE_ID = []; % 車両ID
         VEHICLE_TYPE = []; % 車両タイプ
         VEHICLE_LENGTH = []; % 車両の長さ
         VEHICLE_WIDTH = []; % 車両の幅
@@ -12,7 +13,7 @@ classdef Vehicle<handle
         MAX_ACCELERATION = 5; % 車両の最大加速度
 
         % 車両の状態
-        lane = []; % 車両の走行レーン
+        lane_id = []; % 車両の走行レーン
         position = []; % 車両の位置
         velocity = []; % 車両の速度
         acceleration = 0; % 車両の加速度
@@ -21,12 +22,13 @@ classdef Vehicle<handle
     end
 
     methods
-        function obj = Vehicle(vehicle_type, lane, position, velocity)
+        function obj = Vehicle(vehicle_id, vehicle_type, position, velocity)
             % コンストラクタ
             % 車両の基本情報を初期化
-            obj.VEHICLE_TYPE = vehicle_type;
+            obj.VEHICLE_ID = vehicle_id; % 車両ID
+            obj.VEHICLE_TYPE = vehicle_type; % 車両タイプ
 
-            % 車両の長さと幅を設定
+            % 車両のタイプに応じて車両の長さと幅を設定
             switch vehicle_type
                 case 'car'
                     obj.VEHICLE_LENGTH = 5.25; % 車両の長さ (m)
@@ -39,15 +41,14 @@ classdef Vehicle<handle
             end
 
             % 車両の初期位置と速度を設定
-            obj.lane = lane; % 車両の走行レーン
             obj.position = position; % 車両の位置 (m)
             obj.velocity = velocity; % 車両の速度 (m/s)
 
         end
 
-        function change_lane(obj, lane)
+        function change_lane_id(obj, lane_id)
             % 車両の走行レーンを変更
-            obj.lane = lane;
+            obj.lane_id = lane_id;
         end
 
         function change_input_acceleration(obj, input_acceleration)
@@ -82,6 +83,5 @@ classdef Vehicle<handle
                 obj.velocity = obj.MAX_VELOCITY;
             end
         end
-
     end
 end
