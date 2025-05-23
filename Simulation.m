@@ -11,6 +11,8 @@ classdef Simulation
         TIME_STEP = 0.01;
         % シミュレーションの終了フラグ
         isEnd = false;
+        % 動画を保存するかどうかのフラグ
+        isSaveVideo = True;
     end
 
     methods

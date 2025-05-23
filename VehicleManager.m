@@ -54,9 +54,10 @@ classdef VehicleManager<handle
             end
         end
 
-        function update_vehicle_in_lane(obj, lane_id)
+        function update_vehicle_in_lane(obj, lane_id, time_step)
             % 車両を更新
             % lane_id: 車両が存在するレーンのID
+            % time_step: 時間ステップ
             if strcmp(lane_id, 'Mainline')
                 vehicles = obj.mainline_vehicles;
             else strcmp(lane_id, 'Onramp')
@@ -68,10 +69,11 @@ classdef VehicleManager<handle
                 % 車両の加速度を制御器に基づいて更新
                 if isempty(vehicle.controller)
                     % 制御器が設定されていない場合は，加速度を参照速度に追従するように設定
-                    if vehicle.velocity < vehicle.lane.REFERENCE_VELOCITY
-                        vehicle.change_input_acceleration(vehicle.lane.REFERENCE_VELOCITY - vehicle.velocity);
-                    else
+                    if vehicle.velocity == vehicle.lane.REFERENCE_VELOCITY
                         vehicle.change_input_acceleration(0);
+                    else
+                        acceleration = (vehicle.lane.REFERENCE_VELOCITY - vehicle.velocity) / time_step;
+                        vehicle.change_input_acceleration(acceleration);
                     end
                 end
 
@@ -87,7 +89,7 @@ classdef VehicleManager<handle
                 end
 
                 % 車両の状態を更新
-                vehicle.update_state();
+                vehicle.update_state(time_step);
 
                 % 車線合流の処理
                 if strcmp(lane_id, 'Onramp')
