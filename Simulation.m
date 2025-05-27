@@ -8,7 +8,7 @@ classdef Simulation<handle
         % シミュレーションの終了時間
         end_time = 30;
         % シミュレーションの時間間隔
-        time_step = 0.01;
+        time_step = 0.1;
         % シミュレーションのステップ数
         step_number = 0;
 
@@ -21,6 +21,8 @@ classdef Simulation<handle
 
         % シミュレーションの終了フラグ
         isEnd = false;
+        % csvファイルに保存するかどうかのフラグ
+        isSaveCSV = true;
         % 動画を保存するかどうかのフラグ
         isSaveVideo = true;
     end
@@ -49,7 +51,7 @@ classdef Simulation<handle
             vehicles = [mainline.vehicles.values(); onramp.vehicles.values()];
             for vehicle = vehicles'
                 % 車両の状態を更新
-                vehicle.update_status(obj.time_step);
+                vehicle.update_state(obj.time_step);
 
                 % 車線合流の処理
                 if strcmp(vehicle.lane_id, 'On-ramp')
@@ -58,6 +60,11 @@ classdef Simulation<handle
                         mainline.add_vehicle(vehicle);
                         onramp.remove_vehicle(vehicle.VEHICLE_ID);
                     end
+                end
+
+                if obj.isSaveCSV
+                    % 車両の状態をCSVファイルに保存
+                    save_vehicle_state_to_csv(vehicle, obj.time, obj.result_folder);
                 end
             end
 
@@ -90,4 +97,37 @@ classdef Simulation<handle
         end
 
     end
+end
+
+function save_vehicle_state_to_csv(vehicle, time, result_folder)
+    % ビークルの状態をCSVファイルに保存する
+    filename = [result_folder, filesep, vehicle.VEHICLE_ID, '.csv'];
+
+    % ビークルの状態を取得
+    data = {time, vehicle.position, vehicle.reference_position, vehicle.velocity, vehicle.reference_velocity, vehicle.acceleration, vehicle.input_acceleration, vehicle.jerk, vehicle.controller, vehicle.lane_id};
+
+    % ヘッダーを追加 (ファイルが存在しない場合のみ)
+    if exist(filename, 'file') ~= 2
+        header = {'Time', 'Position', 'Reference Position', 'Velocity', 'Reference Velocity', 'Acceleration', 'Input_Acceleration', 'Jerk', 'Controller', 'Lane ID'};
+        fid = fopen(filename, 'w');
+        fprintf(fid, '%s,', header{1,1:end-1});
+        fprintf(fid, '%s\n', header{1,end});
+        fclose(fid);
+    end
+
+    % データを追記
+    fid = fopen(filename, 'a');
+    for i = 1:length(data)
+        if isnumeric(data{i})
+            fprintf(fid, '%g', data{i});
+        else
+            fprintf(fid, '%s', num2str(data{i}));
+        end
+        if i < length(data)
+            fprintf(fid, ',');
+        else
+            fprintf(fid, '\n');
+        end
+    end
+    fclose(fid);
 end
