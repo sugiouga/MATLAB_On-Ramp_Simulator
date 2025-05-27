@@ -14,12 +14,13 @@ classdef Vehicle<handle
 
         % 車両の状態
         position = []; % 車両の位置
+        reference_position = []; % 車両の参照位置
         velocity = []; % 車両の速度
         reference_velocity = []; % 車両の参照速度
-        controller = []; % 車両の制御器
         acceleration = 0; % 車両の加速度
         input_acceleration = 0; % 車両の入力加速度
         jerk = 0; % 車両のジャーク
+        controller = []; % 車両の制御器
         lane_id = []; % 車両の走行レーン
     end
 
@@ -53,22 +54,23 @@ classdef Vehicle<handle
             obj.reference_velocity = reference_velocity;
         end
 
+        function change_input_acceleration(obj, input_acceleration)
+            % 車両の入力加速度を変更
+            obj.input_acceleration = input_acceleration;
+        end
+
         function change_controller(obj, controller)
             % 車両の制御器を変更
             obj.controller = controller;
         end
 
-        function change_input_acceleration(obj, input_acceleration)
-            % 車両の入力加速度を変更
-            obj.input_acceleration = input_acceleration;
-        end
 
         function change_lane_id(obj, lane_id)
             % 車両の走行レーンを変更
             obj.lane_id = lane_id;
         end
 
-        function update_status(obj, time_step)
+        function update_state(obj, time_step)
             % 車両の状態を更新
 
             % 車両の加速度入力を制限する

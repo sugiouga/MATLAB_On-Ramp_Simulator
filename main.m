@@ -13,7 +13,8 @@ onramp_reference_velocity = 20; % 合流車線の参照速度 (m/s)
 mainline = Lane('Mainline', mainline_start_position, mainline_end_position, mainline_reference_velocity);
 onramp = Lane('On-ramp', onramp_start_position, onramp_end_position, onramp_reference_velocity);
 
-VehicleManager = VehicleManager(); % 車両管理オブジェクトの作成
+% 車両管理オブジェクトの作成
+VehicleManager = VehicleManager();
 
 % 車両の生成
 for i = 1 : 16
@@ -58,8 +59,6 @@ while ~Simulation.isEnd
                 case 'MPC'
                     % MPC制御器を使用している場合
                     vehicle.change_input_acceleration(MPC);
-                otherwise
-                    error('Unknown controller type');
             end
         end
     end
