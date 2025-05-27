@@ -15,6 +15,7 @@ classdef Vehicle<handle
         % 車両の状態
         position = []; % 車両の位置
         velocity = []; % 車両の速度
+        reference_velocity = []; % 車両の参照速度
         controller = []; % 車両の制御器
         acceleration = 0; % 車両の加速度
         input_acceleration = 0; % 車両の入力加速度
@@ -45,6 +46,11 @@ classdef Vehicle<handle
             obj.position = position; % 車両の位置 (m)
             obj.velocity = velocity; % 車両の速度 (m/s)
             obj.controller = controller; % 車両の制御器
+        end
+
+        function change_reference_velocity(obj, reference_velocity)
+            % 車両の参照速度を変更
+            obj.reference_velocity = reference_velocity;
         end
 
         function change_controller(obj, controller)

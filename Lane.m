@@ -14,6 +14,7 @@ classdef Lane<handle
     end
 
     methods
+
         function obj = Lane(lane_id, start_position, end_position, reference_velocity)
             % コンストラクタ
             % 車線の基本情報を初期化
@@ -26,7 +27,8 @@ classdef Lane<handle
         function add_vehicle(obj, vehicle)
             % 車両をレーンに追加
             % vehicle: 車両オブジェクト
-            obj.vehicles(vehicle.vehicle.id) = vehicle;
+            obj.vehicles(vehicle.VEHICLE_ID) = vehicle;
+            vehicle.change_reference_velocity(obj.reference_velocity); % 車両の参照速度をレーンの参照速度に設定
             vehicle.change_lane_id(obj.LANE_ID); % 車両のレーンIDを変更
         end
 
@@ -34,10 +36,11 @@ classdef Lane<handle
             % 車両をレーンから削除
             % vehicle_id: 車両ID
             if isKey(obj.vehicles, vehicle_id)
-                remove(obj.vehicles, vehicle_id);
+                obj.vehicles = remove(obj.vehicles, vehicle_id);
             else
                 error('Vehicle ID not found in lane');
             end
         end
+
     end
 end
