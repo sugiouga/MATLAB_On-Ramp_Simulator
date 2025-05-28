@@ -12,6 +12,10 @@ classdef Simulation<handle
         % シミュレーションのステップ数
         step_number = 0;
 
+        % 車線オブジェクト
+        mainline = []; % 本線のレーンオブジェクト
+        onramp = []; % 合流車線のレーンオブジェクト
+
         % グラフィックオブジェクト
         figure = [];
         figure_update_interval = 0.2; % グラフィックの更新間隔 (秒)
@@ -37,6 +41,10 @@ classdef Simulation<handle
             % シミュレーションの時間を初期化
             obj.time = obj.start_time;
 
+            % 車線オブジェクトを設定
+            obj.mainline = mainline; % 本線のレーンオブジェクト
+            obj.onramp = onramp; % 合流車線のレーンオブジェクト
+
             % 日付時刻を含む結果保存フォルダ名を作成
             timestamp = datestr(now, 'yyyymmdd_HHMMSS');
             obj.result_folder = fullfile('simulation_results', timestamp);
@@ -45,11 +53,13 @@ classdef Simulation<handle
             end
 
             % 描画の初期化
-            obj.figure = Figure(obj, mainline, onramp);
+            obj.figure = Figure(obj);
 
         end
 
-        function step(obj, mainline, onramp)
+        function step(obj)
+            mainline = obj.mainline; % 本線のレーンオブジェクト
+            onramp = obj.onramp; % 合流車線のレーンオブジェクト
 
             vehicles = [mainline.vehicles.values(); onramp.vehicles.values()];
             for vehicle = vehicles'
@@ -73,7 +83,7 @@ classdef Simulation<handle
 
             if mod(obj.time, obj.figure_update_interval) < obj.time_step
                 % グラフィックの更新
-                obj.figure.update_vehicle_figure(obj, mainline, onramp);
+                obj.figure.update_vehicle_figure(obj);
             end
 
             % シミュレーションの時間を更新

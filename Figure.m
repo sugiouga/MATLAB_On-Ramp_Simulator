@@ -26,9 +26,11 @@ classdef Figure<handle
 
     methods
 
-        function obj = Figure(simulation, mainline, onramp)
+        function obj = Figure(simulation)
             % コンストラクタ
             % グラフィックの初期化
+            mainline = simulation.mainline; % 本線のレーンオブジェクト
+            onramp = simulation.onramp; % 合流車線のレーンオブジェクト
 
             % グラフィックの背景を作成
             % グラフウィンドウを作成
@@ -73,9 +75,12 @@ classdef Figure<handle
 
         end
 
-        function update_vehicle_figure(obj, simulation, mainline, onramp)
+        function update_vehicle_figure(obj, simulation)
             % 車両のグラフィックを更新
             vehicle_figure = [];
+
+            mainline = simulation.mainline; % 本線のレーンオブジェクト
+            onramp = simulation.onramp; % 合流車線のレーンオブジェクト
 
             % 本線の車両を描画
             for vehicle = mainline.vehicles.values()'
