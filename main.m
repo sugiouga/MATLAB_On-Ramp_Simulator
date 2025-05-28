@@ -15,15 +15,15 @@ mainline = Lane('Mainline', mainline_start_position, mainline_end_position, main
 onramp = Lane('On-ramp', onramp_start_position, onramp_end_position, onramp_reference_velocity);
 
 % 車両管理オブジェクトの作成
-VehicleManager = VehicleManager();
+vehicle_manager = VehicleManager(mainline, onramp);
 
 % 車両の生成
 for i = 1 : 16
     % 本線に車両を追加
     mainline_vehicle_type = 'car'; % 車両タイプ
-    mainline_controller = []; % 車両の制御器
+    mainline_controller = 'IDM'; % 車両の制御器
     mainline_distance = 150 - 100*rand; % 車間距離 (m)
-    VehicleManager.generate_vehicle_in_lane(mainline_vehicle_type, mainline_controller, mainline, mainline_distance);
+    vehicle_manager.generate_vehicle_in_lane(mainline_vehicle_type, mainline_controller, 'Mainline', mainline_distance);
 end
 
 for i = 1 : 1
@@ -31,11 +31,14 @@ for i = 1 : 1
     onramp_vehicle_type = 'car'; % 車両タイプ
     onramp_controller = []; % 車両の制御器
     onramp_distance = 50; % 車間距離 (m)
-    VehicleManager.generate_vehicle_in_lane(onramp_vehicle_type, onramp_controller, onramp, onramp_distance);
+    vehicle_manager.generate_vehicle_in_lane(onramp_vehicle_type, onramp_controller, 'On-ramp', onramp_distance);
 end
 
 % シミュレーションオブジェクトの作成
 simulation = Simulation(mainline, onramp);
+
+% 車両の制御器の設定
+controller = Controller(simulation);
 
 while ~simulation.is_end
 
@@ -56,7 +59,8 @@ while ~simulation.is_end
             switch vehicle.controller
                 case 'IDM'
                     % IDM制御器を使用している場合
-                    vehicle.change_input_acceleration(IDM);
+                    leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle);
+                    controller.idm(vehicle, leading_vehicle);
                 case 'MPC'
                     % MPC制御器を使用している場合
                     vehicle.change_input_acceleration(MPC);
@@ -64,6 +68,6 @@ while ~simulation.is_end
         end
     end
 
-    simulation.step(mainline, onramp); % シミュレーションのステップを実行
+    simulation.step(); % シミュレーションのステップを実行
 
 end
