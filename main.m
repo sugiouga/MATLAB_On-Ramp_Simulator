@@ -35,9 +35,9 @@ for i = 1 : 1
 end
 
 % シミュレーションオブジェクトの作成
-Simulation = Simulation(mainline, onramp);
+simulation = Simulation(mainline, onramp);
 
-while ~Simulation.is_end
+while ~simulation.is_end
 
     vehicles = [mainline.vehicles.values(); onramp.vehicles.values()];
     % 車両の加速度を制御器に基づいて更新
@@ -49,7 +49,7 @@ while ~Simulation.is_end
             if vehicle.velocity == vehicle.reference_velocity
                 vehicle.change_input_acceleration(0);
             else
-                acceleration = (vehicle.reference_velocity - vehicle.velocity) / time_step;
+                acceleration = (vehicle.reference_velocity - vehicle.velocity) / simulation.time_step;
                 vehicle.change_input_acceleration(acceleration);
             end
         else
@@ -64,8 +64,6 @@ while ~Simulation.is_end
         end
     end
 
-    Simulation.step(mainline, onramp); % シミュレーションのステップを実行
+    simulation.step(mainline, onramp); % シミュレーションのステップを実行
 
 end
-
-close all

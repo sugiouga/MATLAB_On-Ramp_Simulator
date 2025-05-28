@@ -13,18 +13,21 @@ classdef Simulation<handle
         step_number = 0;
 
         % グラフィックオブジェクト
-        Graphic = [];
-        graphic_update_interval = 0.2; % グラフィックの更新間隔 (秒)
+        figure = [];
+        figure_update_interval = 0.2; % グラフィックの更新間隔 (秒)
 
         % シミュレーションの結果を保存するフォルダ
         result_folder = '';
 
+        % 動画を保存するかどうかのフラグ
+        is_save_video = true;
         % シミュレーションの終了フラグ
         is_end = false;
         % csvファイルに保存するかどうかのフラグ
         is_save_csv = true;
-        % 動画を保存するかどうかのフラグ
-        is_save_video = true;
+        % 時系列データをグラフに保存するかどうかのフラグ
+        is_plot_time_series_data = true;
+
     end
 
     methods
@@ -42,7 +45,7 @@ classdef Simulation<handle
             end
 
             % 描画の初期化
-            obj.Graphic = Graphic(obj, mainline, onramp);
+            obj.figure = Figure(obj, mainline, onramp);
 
         end
 
@@ -68,9 +71,9 @@ classdef Simulation<handle
                 end
             end
 
-            if mod(obj.time, obj.graphic_update_interval) < obj.time_step
+            if mod(obj.time, obj.figure_update_interval) < obj.time_step
                 % グラフィックの更新
-                obj.Graphic.update_vehicle_graphic(obj, mainline, onramp);
+                obj.figure.update_vehicle_figure(obj, mainline, onramp);
             end
 
             % シミュレーションの時間を更新
@@ -86,10 +89,20 @@ classdef Simulation<handle
 
             if obj.is_end
                 % シミュレーションの終了処理
+                close all;
                 disp('Simulation ended.');
+
                 if obj.is_save_video
-                    obj.Graphic.write_video(obj);
+                    obj.figure.write_video(obj, 'simulation_video.mp4', 'MPEG-4', 10); % 動画の保存
+                    disp('Video saved successfully.');
                 end
+
+                if obj.is_plot_time_series_data
+                    % 時系列データをグラフに保存
+                    obj.figure.plot_time_series_data(obj);
+                    disp('Time series data plotted successfully.');
+                end
+
                 disp(['Results saved in: ', obj.result_folder]);
                 return;
             end
@@ -119,7 +132,7 @@ function save_vehicle_state_to_csv(vehicle, time, result_folder)
     fid = fopen(filename, 'a');
     for i = 1:length(data)
         if isnumeric(data{i})
-            fprintf(fid, '%g', data{i});
+            fprintf(fid, '%f', data{i});
         else
             fprintf(fid, '%s', num2str(data{i}));
         end
