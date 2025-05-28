@@ -65,9 +65,9 @@ classdef Graphic<handle
             text(onramp.start_position + 10, obj.ONRAMP_Y_OFFSET + 0.3, onramp.LANE_ID, ...
                 'FontSize', 12, 'FontWeight', 'bold', 'Color', [1 0 0]);
 
-            if simulation.isSaveVideo
+            if simulation.is_save_video
                 % 動画の保存を開始
-                obj.video_total_frame_number = floor((simulation.end_time - simulation.start_time) / simulation.Graphic_update_interval); % 総フレーム数を計算
+                obj.video_total_frame_number = floor((simulation.end_time - simulation.start_time) / simulation.graphic_update_interval); % 総フレーム数を計算
                 empty_frame = struct('cdata', [], 'colormap', []);
                 obj.video_frames = repmat(empty_frame, obj.video_total_frame_number + 1, 1); % 構造体配列で初期化
 
@@ -105,7 +105,7 @@ classdef Graphic<handle
             graphic_title = sprintf('Simulation time 00:%d:%02d', floor(simulation.time_step * (simulation.step_number - 1) / 60), mod(floor(simulation.time_step * (simulation.step_number - 1)), 60));
             title(graphic_title, 'FontSize', 14, 'FontWeight', 'bold'); % タイトルを設定
 
-            if simulation.isSaveVideo
+            if simulation.is_save_video
                 drawnow; % グラフィックを更新
                 obj.video_frame_number = obj.video_frame_number + 1; % フレーム番号を更新
                 obj.video_frames(obj.video_frame_number) = getframe(obj.graphic); % 現在のフレームを保存

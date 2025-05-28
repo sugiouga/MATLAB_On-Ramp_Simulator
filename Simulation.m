@@ -14,17 +14,17 @@ classdef Simulation<handle
 
         % グラフィックオブジェクト
         Graphic = [];
-        Graphic_update_interval = 0.2; % グラフィックの更新間隔 (秒)
+        graphic_update_interval = 0.2; % グラフィックの更新間隔 (秒)
 
         % シミュレーションの結果を保存するフォルダ
         result_folder = '';
 
         % シミュレーションの終了フラグ
-        isEnd = false;
+        is_end = false;
         % csvファイルに保存するかどうかのフラグ
-        isSaveCSV = true;
+        is_save_csv = true;
         % 動画を保存するかどうかのフラグ
-        isSaveVideo = true;
+        is_save_video = true;
     end
 
     methods
@@ -62,13 +62,13 @@ classdef Simulation<handle
                     end
                 end
 
-                if obj.isSaveCSV
+                if obj.is_save_csv
                     % 車両の状態をCSVファイルに保存
                     save_vehicle_state_to_csv(vehicle, obj.time, obj.result_folder);
                 end
             end
 
-            if mod(obj.time, obj.Graphic_update_interval) < obj.time_step
+            if mod(obj.time, obj.graphic_update_interval) < obj.time_step
                 % グラフィックの更新
                 obj.Graphic.update_vehicle_graphic(obj, mainline, onramp);
             end
@@ -81,13 +81,13 @@ classdef Simulation<handle
 
             % シミュレーションの終了条件をチェック
             if obj.time >= obj.end_time
-                obj.isEnd = true;
+                obj.is_end = true;
             end
 
-            if obj.isEnd
+            if obj.is_end
                 % シミュレーションの終了処理
                 disp('Simulation ended.');
-                if obj.isSaveVideo
+                if obj.is_save_video
                     obj.Graphic.write_video(obj);
                 end
                 disp(['Results saved in: ', obj.result_folder]);
@@ -108,7 +108,7 @@ function save_vehicle_state_to_csv(vehicle, time, result_folder)
 
     % ヘッダーを追加 (ファイルが存在しない場合のみ)
     if exist(filename, 'file') ~= 2
-        header = {'Time', 'Position', 'Reference Position', 'Velocity', 'Reference Velocity', 'Acceleration', 'Input_Acceleration', 'Jerk', 'Controller', 'Lane ID'};
+        header = {'Time', 'Position', 'Reference Position', 'Velocity', 'Reference Velocity', 'Acceleration', 'Input Acceleration', 'Jerk', 'Controller', 'Lane ID'};
         fid = fopen(filename, 'w');
         fprintf(fid, '%s,', header{1,1:end-1});
         fprintf(fid, '%s\n', header{1,end});

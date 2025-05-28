@@ -1,5 +1,6 @@
 clear
 close all
+clc
 
 % レーンの設定
 mainline_start_position = 0; % 本線の開始位置 (m)
@@ -36,7 +37,7 @@ end
 % シミュレーションオブジェクトの作成
 Simulation = Simulation(mainline, onramp);
 
-while ~Simulation.isEnd
+while ~Simulation.is_end
 
     vehicles = [mainline.vehicles.values(); onramp.vehicles.values()];
     % 車両の加速度を制御器に基づいて更新
@@ -66,3 +67,5 @@ while ~Simulation.isEnd
     Simulation.step(mainline, onramp); % シミュレーションのステップを実行
 
 end
+
+close all
