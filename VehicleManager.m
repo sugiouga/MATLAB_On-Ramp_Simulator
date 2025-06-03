@@ -6,6 +6,8 @@ classdef VehicleManager<handle
         onramp;
         mainline_vehicle_id = []; % 本線の車両ID
         onramp_vehicle_id = []; % 合流車線の車両ID
+        mainline_vehicles = dictionary; % 本線の車両を格納する辞書
+        onramp_vehicles = dictionary; % 合流車線の車両を格納する辞書
     end
 
     methods
@@ -37,6 +39,8 @@ classdef VehicleManager<handle
 
                 mainline_vehicle = Vehicle(sprintf('Mainline_vehicle_%d', obj.mainline_vehicle_id), vehicle_type, init_position, obj.mainline.reference_velocity, controller);
                 obj.mainline.add_vehicle(mainline_vehicle);
+                obj.mainline_vehicles(mainline_vehicle.VEHICLE_ID) = mainline_vehicle;
+
             elseif strcmp(lane_id, 'On-ramp')
                 obj.onramp_vehicle_id = obj.onramp_vehicle_id + 1;
 
@@ -48,6 +52,8 @@ classdef VehicleManager<handle
 
                 onramp_vehicle = Vehicle(sprintf('On-ramp_vehicle_%d', obj.onramp_vehicle_id), vehicle_type, init_position, obj.onramp.reference_velocity, controller);
                 obj.onramp.add_vehicle(onramp_vehicle);
+                obj.onramp_vehicles(onramp_vehicle.VEHICLE_ID) = onramp_vehicle;
+
             else
                 error('Unknown LANE ID');
             end

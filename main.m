@@ -26,10 +26,10 @@ for i = 1 : 16
     vehicle_manager.generate_vehicle_in_lane(mainline_vehicle_type, mainline_controller, 'Mainline', mainline_distance);
 end
 
-for i = 1 : 1
+for i = 1 : 2
     % 合流車線に車両を追加
     onramp_vehicle_type = 'car'; % 車両タイプ
-    onramp_controller = []; % 車両の制御器
+    onramp_controller = 'IDM'; % 車両の制御器
     onramp_distance = 50; % 車間距離 (m)
     vehicle_manager.generate_vehicle_in_lane(onramp_vehicle_type, onramp_controller, 'On-ramp', onramp_distance);
 end
@@ -42,9 +42,8 @@ controller = Controller(simulation);
 
 while ~simulation.is_end
 
-    vehicles = [mainline.vehicles.values(); onramp.vehicles.values()];
     % 車両の加速度を制御器に基づいて更新
-    for vehicle = vehicles'
+    for vehicle = vehicle_manager.mainline_vehicles.values'
         % 車両の状態を更新
         % 車両の加速度を制御器に基づいて更新
         if isempty(vehicle.controller)
@@ -61,9 +60,28 @@ while ~simulation.is_end
                     % IDM制御器を使用している場合
                     leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle);
                     controller.idm(vehicle, leading_vehicle);
+            end
+        end
+    end
+
+    for vehicle = vehicle_manager.onramp_vehicles.values'
+        % 車両の状態を更新
+        % 車両の加速度を制御器に基づいて更新
+        if vehicle.position <= mainline.start_position
+            % 合流車線の車両が本線に合流する前は、制御器が設定されていない場合は加速度を参照速度に追従するように設定
+            % 制御器が設定されていない場合は，加速度を参照速度に追従するように設定
+            if vehicle.velocity == vehicle.reference_velocity
+                vehicle.change_input_acceleration(0);
+            else
+                acceleration = (vehicle.reference_velocity - vehicle.velocity) / simulation.time_step;
+                vehicle.change_input_acceleration(acceleration);
+            end
+        else
+            switch vehicle.controller
                 case 'MPC'
                     % MPC制御器を使用している場合
-                    vehicle.change_input_acceleration(MPC);
+                    leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle);
+                    controller.mpc(vehicle, leading_vehicle);
             end
         end
     end
