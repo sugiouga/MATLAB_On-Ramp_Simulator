@@ -7,7 +7,7 @@ mainline_start_position = -200; % 本線の開始位置 (m)
 mainline_end_position = 400; % 本線の終了位置 (m)
 mainline_reference_velocity = 25; % 本線の参照速度 (m/s)
 onramp_start_position = -200; % 合流車線の開始位置 (m)
-onramp_end_position = 240; % 合流車線の終了位置 (m)
+onramp_end_position = 300; % 合流車線の終了位置 (m)
 onramp_reference_velocity = 20; % 合流車線の参照速度 (m/s)
 
 % レーンオブジェクトの作成

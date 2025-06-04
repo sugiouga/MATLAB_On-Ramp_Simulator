@@ -50,7 +50,7 @@ classdef Controller<handle
             p = politeness_factor; % ポライトネスファクター
             threshold_acceleration = -3; % 加速度のしきい値
 
-            if ~isempty(obj.vehicle_manager.find_surround_vehicles_in_lane(vehicle, 'Mainline', 50, 'rear'))
+            if ~isempty(obj.vehicle_manager.find_surround_vehicles_in_lane(vehicle, 'Mainline', 30, 'rear'))
                 leading_vehicle = obj.vehicle_manager.find_leading_vehicle_in_lane(vehicle, 'On-ramp');
                 obj.idm(vehicle, leading_vehicle);
                 return;
