@@ -6,8 +6,6 @@ classdef VehicleManager<handle
         onramp;
         mainline_vehicle_id = []; % 本線の車両ID
         onramp_vehicle_id = []; % 合流車線の車両ID
-        mainline_vehicles = dictionary; % 本線の車両を格納する辞書
-        onramp_vehicles = dictionary; % 合流車線の車両を格納する辞書
     end
 
     methods
@@ -39,7 +37,6 @@ classdef VehicleManager<handle
 
                 mainline_vehicle = Vehicle(sprintf('Mainline_vehicle_%d', obj.mainline_vehicle_id), vehicle_type, init_position, obj.mainline.reference_velocity, controller);
                 obj.mainline.add_vehicle(mainline_vehicle);
-                obj.mainline_vehicles(mainline_vehicle.VEHICLE_ID) = mainline_vehicle;
 
             elseif strcmp(lane_id, 'On-ramp')
                 obj.onramp_vehicle_id = obj.onramp_vehicle_id + 1;
@@ -52,28 +49,89 @@ classdef VehicleManager<handle
 
                 onramp_vehicle = Vehicle(sprintf('On-ramp_vehicle_%d', obj.onramp_vehicle_id), vehicle_type, init_position, obj.onramp.reference_velocity, controller);
                 obj.onramp.add_vehicle(onramp_vehicle);
-                obj.onramp_vehicles(onramp_vehicle.VEHICLE_ID) = onramp_vehicle;
 
             else
                 error('Unknown LANE ID');
             end
         end
 
-        function leading_vehicle = find_leading_vehicle_in_lane(obj, vehicle)
-            % 車両の先行車両を見つける
+        function leading_vehicle = find_leading_vehicle_in_lane(obj, vehicle, lane_id)
+            % 車両の最も近い先行車両を見つける
             % vehicle: 対象の車両
 
-            if strcmp(vehicle.lane_id, 'Mainline')
-                vehicles = obj.mainline.vehicles.values();
-            elseif strcmp(vehicle.lane_id, 'On-ramp')
-                vehicles = obj.onramp.vehicles.values();
+            if strcmp(lane_id, 'Mainline')
+            vehicles = obj.mainline.vehicles.values();
+            elseif strcmp(lane_id, 'On-ramp')
+            vehicles = obj.onramp.vehicles.values();
+            else
+            error('Unknown LANE ID');
             end
 
+            min_distance = inf;
             leading_vehicle = [];
             for v = vehicles'
                 if v.position > vehicle.position
-                    leading_vehicle = v; % 先行車両を見つけたら設定
-                    break;
+                    distance = v.position - vehicle.position;
+                    if distance < min_distance
+                    min_distance = distance;
+                    leading_vehicle = v;
+                    end
+                end
+            end
+        end
+
+        function following_vehicle = find_following_vehicle_in_lane(obj, vehicle, lane_id)
+            % 車両の最も近い後続車両を見つける
+            % vehicle: 対象の車両
+
+            if strcmp(lane_id, 'Mainline')
+            vehicles = obj.mainline.vehicles.values();
+            elseif strcmp(lane_id, 'On-ramp')
+            vehicles = obj.onramp.vehicles.values();
+            else
+            error('Unknown LANE ID');
+            end
+
+            min_distance = inf;
+            following_vehicle = [];
+            for v = vehicles'
+            if v.position < vehicle.position
+                distance = vehicle.position - v.position;
+                if distance < min_distance
+                min_distance = distance;
+                following_vehicle = v;
+                end
+            end
+            end
+        end
+
+        function surrounding_vehicles = find_surround_vehicles_in_lane(obj, vehicle, lane_id, distance, direction)
+            % 車両の周囲の車両を見つける
+            % vehicle: 対象の車両
+            % lane_id: レーンID
+
+            if strcmp(lane_id, 'Mainline')
+                vehicles = obj.mainline.vehicles.values();
+            elseif strcmp(lane_id, 'On-ramp')
+                vehicles = obj.onramp.vehicles.values();
+            end
+
+
+            surrounding_vehicles = [];
+            for v = vehicles'
+                switch direction
+                    case 'front'
+                        % 前方の車両を取得
+                        delta_x = vehicles.position - v.position;
+                    case 'rear'
+                        % 後方の車両を取得
+                        delta_x = v.position - vehicle.position;
+                    case 'both'
+                        % 前後の車両を取得
+                        delta_x = abs(v.position - vehicle.position);
+                end
+                if ~strcmp(v.VEHICLE_ID, vehicle.VEHICLE_ID) && delta_x < distance && delta_x > 0 % 100m以内の車両を対象
+                    surrounding_vehicles = [surrounding_vehicles; v]; % 周囲の車両を追加
                 end
             end
         end

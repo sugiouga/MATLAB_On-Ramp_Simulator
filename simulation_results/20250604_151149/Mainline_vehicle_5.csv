@@ -1,0 +1,2 @@
+Time,Position,Reference_Position,Velocity,Reference_Velocity,Acceleration,Input_Acceleration,Jerk,Fuel_Consumption,Controller,Lane_ID
+0.000000,-79.828759,,24.990426,25.000000,-0.095738,-0.095738,-0.957384,0.666000,IDM,Mainline
