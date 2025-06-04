@@ -9,8 +9,8 @@ classdef Vehicle<handle
 
         MIN_VELOCITY = 0; % 車両の最小速度
         MAX_VELOCITY = 30; % 車両の最大速度
-        MIN_ACCELERATION = -5; % 車両の最小加速度
-        MAX_ACCELERATION = 5; % 車両の最大加速度
+        MIN_ACCELERATION = -3; % 車両の最小加速度
+        MAX_ACCELERATION = 2; % 車両の最大加速度
 
         % 車両の状態
         position = []; % 車両の位置
@@ -20,8 +20,12 @@ classdef Vehicle<handle
         acceleration = 0; % 車両の加速度
         input_acceleration = 0; % 車両の入力加速度
         jerk = 0; % 車両のジャーク
+        fuel_consumption = 0; % 車両の燃料消費量
         controller = []; % 車両の制御器
         lane_id = []; % 車両の走行レーン
+
+        % 車線変更するかどうかのフラグ
+        isChangelane = false; % 車線変更フラグ
     end
 
     methods
@@ -64,10 +68,14 @@ classdef Vehicle<handle
             obj.controller = controller;
         end
 
-
         function change_lane_id(obj, lane_id)
             % 車両の走行レーンを変更
             obj.lane_id = lane_id;
+        end
+
+        function change_isChangelane(obj, flag)
+            % 車線変更フラグを変更
+            obj.isChangelane = flag;
         end
 
         function update_state(obj, time_step)
@@ -95,6 +103,21 @@ classdef Vehicle<handle
                 obj.velocity = obj.MIN_VELOCITY;
             elseif obj.velocity > obj.MAX_VELOCITY
                 obj.velocity = obj.MAX_VELOCITY;
+            end
+
+            delta = 0.666;
+            gamma_1 = 0.072;
+            gamma_2 = 0.0344;
+            d_1 = 0.0269;
+            d_2 = 0.0171;
+            d_3 = 0.000672;
+            m = 1680;
+            P_T = max(0, d_1 * obj.velocity + d_2 * obj.velocity^2 + d_3 * obj.velocity^3 + 0.001 * m * obj.acceleration * obj.velocity);
+            % 燃料消費量を計算する
+            if obj.acceleration <= 0
+                obj.fuel_consumption = obj.fuel_consumption + time_step * delta; % 燃料消費量を更新
+            else
+                obj.fuel_consumption = obj.fuel_consumption + time_step * (delta + gamma_1 * P_T + gamma_2 * 0.001 * m * obj.acceleration^2 * obj.velocity); % 燃料消費量を更新
             end
         end
     end

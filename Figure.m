@@ -6,17 +6,17 @@ classdef Figure<handle
 
         % グラフウィンドウの設定
         FIGURE_POSITION = [20, 300]; % グラフィックの左下隅の基準点
-        FIGURE_WIDTH = 1000; % グラフィックの幅
+        FIGURE_WIDTH = 1500; % グラフィックの幅
         FIGURE_HEIGHT = 200; % グラフィックの高さ
 
         % 背景の設定
         BACKGROUND_X_RANGE = []; % 背景のx軸の範囲
-        BACKGROUND_Y_RANGE = [6, 6]; % 背景のy軸の範囲
+        BACKGROUND_Y_RANGE = [2.5, 2.5]; % 背景のy軸の範囲
         BACKGROUND_COLOR = [0.65 0.995 0.95]; % 背景の色
 
         % レーンの設定
         MAINLINE_Y_OFFSET = 1; % 本線のy軸のオフセット
-        ONRAMP_Y_OFFSET = 5; % 合流車線のy軸のオフセット
+        ONRAMP_Y_OFFSET = 1.2; % 合流車線のy軸のオフセット
 
         % 動画保存の設定
         video_frame_number = 1; % 動画フレーム番号
@@ -46,9 +46,10 @@ classdef Figure<handle
             % 本線
             plot([mainline.start_position, mainline.end_position], [obj.MAINLINE_Y_OFFSET; obj.MAINLINE_Y_OFFSET],'LineWidth',10,'Color',[0.7 0.7 0.7]); % 本線を描画
             % 合流車線
-            onramp_x_range = onramp.start_position : 50 : onramp.end_position + 50; % 合流車線のx軸の範囲
-            onramp_curve = obj.ONRAMP_Y_OFFSET - (obj.ONRAMP_Y_OFFSET - obj.MAINLINE_Y_OFFSET - 0.2) ./ (1 + exp(-0.02*(onramp_x_range - onramp.end_position / 2))); % 合流車線の曲線
-            plot(onramp_x_range, onramp_curve, 'LineWidth', 10, 'Color', [0.7 0.7 0.7]); % 合流車線を描画
+            plot([onramp.start_position, onramp.end_position], [obj.ONRAMP_Y_OFFSET; obj.ONRAMP_Y_OFFSET],'LineWidth',10,'Color',[0.7 0.7 0.7]); % 合流車線を描画
+            % onramp_x_range = onramp.start_position : 50 : onramp.end_position + 50; % 合流車線のx軸の範囲
+            % onramp_curve = obj.ONRAMP_Y_OFFSET - (obj.ONRAMP_Y_OFFSET - obj.MAINLINE_Y_OFFSET - 0.2) ./ (1 + exp(-0.02*(onramp_x_range - onramp.end_position / 2))); % 合流車線の曲線
+            % plot(onramp_x_range, onramp_curve, 'LineWidth', 10, 'Color', [0.7 0.7 0.7]); % 合流車線を描画
 
             axis([mainline.start_position, mainline.end_position, obj.MAINLINE_Y_OFFSET - 1, obj.ONRAMP_Y_OFFSET + 1]); % 軸の範囲を設定
             set(gca, 'YTick', []); % Y軸の目盛りを非表示にする
@@ -56,7 +57,7 @@ classdef Figure<handle
             grid on; % グリッドを表示
 
             % 本線のタイトル
-            text(mainline.start_position + 10, obj.MAINLINE_Y_OFFSET + 0.3, mainline.LANE_ID, ...
+            text(mainline.start_position + 10, obj.MAINLINE_Y_OFFSET - 0.3, mainline.LANE_ID, ...
                 'FontSize', 12, 'FontWeight', 'bold', 'Color', [0 0 1]);
 
             % 合流車線のタイトル
@@ -88,19 +89,20 @@ classdef Figure<handle
                 y = obj.MAINLINE_Y_OFFSET; % 本線のY座標
                 if contains(vehicle.VEHICLE_ID, 'Mainline')
                     vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 4.5, 'MarkerFaceColor', [0 0.4470 0.7410]);
-                    vehicle_figure(end + 1) = plot(x-3, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6, 'MarkerFaceColor', [0 0.4470 0.7410]);
+                    vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6, 'MarkerFaceColor', [0 0.4470 0.7410]);
                 elseif contains(vehicle.VEHICLE_ID, 'On-ramp')
                     vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 4.5,'MarkerFaceColor', [0.8500 0.3250 0.0980]);
-                    vehicle_figure(end + 1) = plot(x-3, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6,'MarkerFaceColor', [0.8500 0.3250 0.0980]);
+                    vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6,'MarkerFaceColor', [0.8500 0.3250 0.0980]);
                 end
             end
 
             % 合流車線の車両を描画
             for vehicle = onramp.vehicles.values()'
                 x = vehicle.position; % 車両の位置
-                y = obj.ONRAMP_Y_OFFSET - (obj.ONRAMP_Y_OFFSET - obj.MAINLINE_Y_OFFSET - 0.2) ./ (1 + exp(-0.02*(x - onramp.end_position / 2)));; % 合流車線のY座標
+                y = obj.ONRAMP_Y_OFFSET; % 合流車線のY座標
+                % y = obj.ONRAMP_Y_OFFSET - (obj.ONRAMP_Y_OFFSET - obj.MAINLINE_Y_OFFSET - 0.2) ./ (1 + exp(-0.02*(x - onramp.end_position / 2)));; % 合流車線のY座標
                 vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 4.5, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
-                vehicle_figure(end + 1) = plot(x-3, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
+                vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 6, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
             end
 
             minutes = floor(simulation.time / 60);
@@ -154,7 +156,7 @@ classdef Figure<handle
             ylabel('Position [m]');
 
             legend('show', 'Interpreter', 'none', 'Location', 'southeast'); % 右下に表示
-            ylim([0 500]); % Y軸の範囲を設定
+            ylim([0 simulation.mainline.end_position]); % Y軸の範囲を設定
             grid on;
 
             % 速度のプロット
@@ -184,7 +186,17 @@ classdef Figure<handle
             xlabel('Time [s]');
             ylabel('Jerk [m/s^3]');
             legend('show', 'Interpreter', 'none', 'Location', 'southeast'); % 右下に表示
-            ylim([-10 10]); % Y軸の範囲を設定
+            ylim([-20 20]); % Y軸の範囲を設定
+            grid on;
+
+            % 燃料消費量のプロット
+            figure(5);
+            hold on;
+            title('Fuel Consumption');
+            xlabel('Time [s]');
+            ylabel('Fuel Consumption [mL]');
+            legend('show', 'Interpreter', 'none', 'Location', 'southeast'); % 右下に表示
+            ylim([0 100]); % Y軸の範囲を設定
             grid on;
 
             % MainLineの車両をプロット
@@ -204,6 +216,7 @@ classdef Figure<handle
                 Velocity = data.Velocity;
                 Acceleration = data.Acceleration;
                 Jerk = data.Jerk;
+                Fuel_Consumption = data.Fuel_Consumption;
 
                 line_style = ':'; % 点線
                 line_color = [0.5, 0.5, 0.5]; % グレー
@@ -232,6 +245,12 @@ classdef Figure<handle
                 plot(Time, Jerk, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
                     'DisplayName', ['Mainline vehicle ' char(vehicle_id)]);
                 % text(Time(end), Jerk(end), char(vehicle_id), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 10);
+
+                % 燃料消費量のプロット
+                figure(5);
+                plot(Time, Fuel_Consumption, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
+                    'DisplayName', ['Mainline vehicle ' char(vehicle_id)]);
+
             end
 
             % OnRampの車両をプロット
@@ -251,6 +270,7 @@ classdef Figure<handle
                 Velocity = data.Velocity;
                 Acceleration = data.Acceleration;
                 Jerk = data.Jerk;
+                Fuel_Consumption = data.Fuel_Consumption;
 
                 line_style = '-'; % 実線
                 line_color = 'b'; % 青色
@@ -279,6 +299,12 @@ classdef Figure<handle
                 plot(Time, Jerk, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
                     'DisplayName', ['On-ramp vehicle ' char(vehicle_id)]);
                 % text(Time(end), Jerk(end), char(vehicle_id), 'Color', 'b', 'FontWeight', 'bold', 'FontSize', 10);
+
+                % 燃料消費量のプロット
+                figure(5);
+                plot(Time, Fuel_Consumption, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
+                    'DisplayName', ['On-ramp vehicle ' char(vehicle_id)]);
+
             end
 
             % 各プロットをPNGファイルとして保存
@@ -286,6 +312,7 @@ classdef Figure<handle
             saveas(figure(2), fullfile(result_folder, 'Velocity.png'));
             saveas(figure(3), fullfile(result_folder, 'Acceleration.png'));
             saveas(figure(4), fullfile(result_folder, 'Jerk.png'));
+            saveas(figure(5), fullfile(result_folder, 'FuelConsumption.png'));
 
         end
 
