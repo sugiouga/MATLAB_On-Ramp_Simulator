@@ -28,9 +28,9 @@ classdef Simulation<handle
         % シミュレーションの終了フラグ
         is_end = false;
         % csvファイルに保存するかどうかのフラグ
-        is_save_csv = true;
+        is_save_csv = false;
         % 時系列データをグラフに保存するかどうかのフラグ
-        is_plot_time_series_data = true;
+        is_plot_time_series_data = false;
 
     end
 
@@ -68,8 +68,7 @@ classdef Simulation<handle
 
                 % 車線合流の処理
                 if strcmp(vehicle.lane_id, 'On-ramp')
-                    % 車両が合流車線の終了位置を超えた場合
-                    if vehicle.isChangelane
+                    if vehicle.isMergelane
                         mainline.add_vehicle(vehicle);
                         onramp.remove_vehicle(vehicle.VEHICLE_ID);
                     end

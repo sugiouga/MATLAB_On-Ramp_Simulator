@@ -30,7 +30,7 @@ classdef VehicleManager<handle
                 obj.mainline_vehicle_id = obj.mainline_vehicle_id + 1;
 
                 if obj.mainline_vehicle_id == 1
-                    init_position = obj.mainline.end_position;
+                    init_position = 0;
                 else
                     init_position = obj.mainline.vehicles(sprintf('Mainline_vehicle_%d', obj.mainline_vehicle_id - 1)).position - distance;
                 end

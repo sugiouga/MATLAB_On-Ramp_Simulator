@@ -25,7 +25,7 @@ classdef Vehicle<handle
         lane_id = []; % 車両の走行レーン
 
         % 車線変更するかどうかのフラグ
-        isChangelane = false; % 車線変更フラグ
+        isMergelane = false; % 車線変更フラグ
     end
 
     methods
@@ -73,9 +73,9 @@ classdef Vehicle<handle
             obj.lane_id = lane_id;
         end
 
-        function change_isChangelane(obj, flag)
+        function change_isMergelane(obj, flag)
             % 車線変更フラグを変更
-            obj.isChangelane = flag;
+            obj.isMergelane = flag;
         end
 
         function update_state(obj, time_step)
