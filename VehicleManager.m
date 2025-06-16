@@ -60,7 +60,7 @@ classdef VehicleManager<handle
             % vehicle: 対象の車両
 
             if strcmp(lane_id, 'Mainline')
-            vehicles = obj.mainline.vehicles.values();
+                vehicles = obj.mainline.vehicles.values();
             elseif strcmp(lane_id, 'On-ramp')
             vehicles = obj.onramp.vehicles.values();
             else
@@ -85,23 +85,23 @@ classdef VehicleManager<handle
             % vehicle: 対象の車両
 
             if strcmp(lane_id, 'Mainline')
-            vehicles = obj.mainline.vehicles.values();
+                vehicles = obj.mainline.vehicles.values();
             elseif strcmp(lane_id, 'On-ramp')
-            vehicles = obj.onramp.vehicles.values();
+                vehicles = obj.onramp.vehicles.values();
             else
-            error('Unknown LANE ID');
+                error('Unknown LANE ID');
             end
 
             min_distance = inf;
             following_vehicle = [];
             for v = vehicles'
-            if v.position < vehicle.position
-                distance = vehicle.position - v.position;
-                if distance < min_distance
-                min_distance = distance;
-                following_vehicle = v;
+                if v.position < vehicle.position
+                    distance = vehicle.position - v.position;
+                    if distance < min_distance
+                    min_distance = distance;
+                    following_vehicle = v;
+                    end
                 end
-            end
             end
         end
 

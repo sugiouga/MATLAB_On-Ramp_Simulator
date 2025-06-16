@@ -29,7 +29,7 @@ end
 for i = 1 : 1
     % 合流車線に車両を追加
     onramp_vehicle_type = 'car'; % 車両タイプ
-    onramp_controller = 'MOBIL'; % 車両の制御器
+    onramp_controller = 'MPC'; % 車両の制御器
     onramp_distance = 80; % 車間距離 (m)
     vehicle_manager.generate_vehicle_in_lane(onramp_vehicle_type, onramp_controller, 'On-ramp', onramp_distance);
 end
@@ -49,12 +49,7 @@ while ~simulation.is_end
         % 車両の加速度を制御器に基づいて更新
         if isempty(vehicle.controller)
             % 制御器が設定されていない場合は，加速度を参照速度に追従するように設定
-            if vehicle.velocity == vehicle.reference_velocity
-                vehicle.change_input_acceleration(0);
-            else
-                acceleration = (vehicle.reference_velocity - vehicle.velocity) / simulation.time_step;
-                vehicle.change_input_acceleration(acceleration);
-            end
+            vehicle.change_input_acceleration(controller.constant_speed(vehicle));
         else
             switch vehicle.controller
                 case 'IDM'
@@ -66,6 +61,16 @@ while ~simulation.is_end
                     if vehicle.position > 0 && strcmp(vehicle.lane_id, 'On-ramp')
                         % 合流車線の車両の場合は、MOBILモデルを適用
                         controller.mobil(vehicle, 0.5);
+                    else
+                        leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, vehicle.lane_id);
+                        vehicle.change_input_acceleration(controller.idm(vehicle, leading_vehicle));
+                    end
+                case 'MPC'
+                    % ゲーム理論モデルを使用している場合
+                    % controller.mpc(vehicle, 3.0);
+
+                    if vehicle.position > 0
+                        controller.mpc(vehicle, 3.0)
                     else
                         leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, vehicle.lane_id);
                         vehicle.change_input_acceleration(controller.idm(vehicle, leading_vehicle));
