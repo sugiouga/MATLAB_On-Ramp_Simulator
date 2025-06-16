@@ -195,7 +195,7 @@ classdef Figure<handle
             title('Fuel Consumption');
             xlabel('Time [s]');
             ylabel('Fuel Consumption [mL]');
-            legend('show', 'Interpreter', 'none', 'Location', 'southeast'); % 右下に表示
+            legend('show', 'Interpreter', 'none', 'Location', 'northwest'); % 左上に表示
             ylim([0 100]); % Y軸の範囲を設定
             grid on;
 
