@@ -21,7 +21,7 @@ classdef Controller<handle
             if vehicle.velocity == vehicle.reference_velocity
                 acceleration = 0; % 参照速度に達している場合は加速度は0
             else
-                acceleration = (vehicle.reference_velocity - vehicle.velocity) / vehicle.time_step; % 参照速度に追従するように加速度を計算
+                acceleration = (vehicle.reference_velocity - vehicle.velocity) / obj.time_step; % 参照速度に追従するように加速度を計算
             end
         end
 
@@ -111,20 +111,28 @@ classdef Controller<handle
 
         end
 
-        function mpc(obj, vehicle, prediction_horizon, position_weight, velocity_weight, input_weight, jerk_weight)
+        function [optimal_u_sequence optimal_tau] = lane_merge_mpc(obj, vehicle, prediction_horizon, tau_interval, weight)
             % ゲーム理論に基づくMPCを使用して車両の加速度を計算
             % vehicle: 対象車両オブジェクト
             % prediction_horizon: 予測ホライズン
 
-            tau_feasible_set = 0 : ceil(prediction_horizon); % 予測ホライズンに基づく時間ステップの集合
+            tau_feasible_set = 0 : tau_interval : round(prediction_horizon); % 予測ホライズンに基づく時間ステップの集合
 
             total_costs = zeros(2, length(tau_feasible_set)); % 各時間ステップのコストを格納する配列
             optimal_u_sequences = cell(2, length(tau_feasible_set)); % 各時間ステップの最適な制御入力を格納するセル配列
             end_step = prediction_horizon / obj.time_step; % 予測ホライズンを時間ステップで割る
             min_distance = 5; % 最小車間距離
-            threshold_distance = 60; % 車線変更のしきい値距離
+            threshold_distance_front = 20; % 車線変更のしきい値距離
+            threshold_distance_rear = 40;
             headway_time = 3;
             min_acceleration = vehicle.MIN_ACCELERATION; % 最小加速度
+
+            mpc_interval = round(tau_interval / obj.time_step); % tauを時間ステップで割る
+            if isempty(vehicle.optimal_u_sequence)
+                u0_sequence = zeros(end_step, 1); % 前の制御入力シーケンスが空の場合はゼロで初期化
+            else
+                u0_sequence = [vehicle.optimal_u_sequence(mpc_interval+1 : end_step, :); zeros(mpc_interval, 1)];
+            end
 
             F_matrix = obj.get_F_matrix(prediction_horizon, obj.time_step); % 状態遷移行列を取得
             G_matrix = obj.get_G_matrix(prediction_horizon, obj.time_step); % 制御入力行列を取得
@@ -143,8 +151,6 @@ classdef Controller<handle
 
             for gap_idx = 1:2
 
-                % 入力に関する制約を設定
-                u0_sequence = zeros(end_step, 1);
                 lb = vehicle.MIN_ACCELERATION * ones(end_step, 1); % 制御入力の下限
                 ub = vehicle.MAX_ACCELERATION * ones(end_step, 1); % 制御入力の上限
 
@@ -152,33 +158,42 @@ classdef Controller<handle
                     current_tau = tau_feasible_set(tau_idx); % 現在の時間ステップ
                     tau_k = round(current_tau / obj.time_step + 1); % 現在のtauを時間ステップで割る
 
-                    A = [G_matrix(1:2:end-1, :); -G_matrix(2*tau_k-1:2:end-1, :)];
-                    b = [-F_matrix(1:2:end-1, :) * vehicle_state; F_matrix(2*tau_k-1:2:end-1, :) * vehicle_state];
+                    A = [G_matrix(1:2:end-1, :); -G_matrix(2*tau_k-1:2:end-1, :); G_matrix(2:2:end, :); -G_matrix(2:2:end, :)];
+                    b = [-F_matrix(1:2:end-1, :) * vehicle_state; F_matrix(2*tau_k-1:2:end-1, :) * vehicle_state; - F_matrix(2:2:end, :) * vehicle_state; F_matrix(2:2:end, :) * vehicle_state];
 
                     if gap_idx == 1
                         % 後続車両の前に合流する場合の制約条件
                         b(1:tau_k-1) = b(1:tau_k-1) + obj.onramp_end_position;
-                        b(tau_k:end_step) = b(tau_k:end_step) + leading_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance; % 前方車両との距離制約を追加
-                        b(end_step+1:end) = b(end_step+1:end) - following_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance; % 後続車両との距離制約を追加
-                        objective_function = @(u_sequence) input_weight * sum(u_sequence.^2) +...
-                        velocity_weight * sum((leading_vehicle_predict_state(2:2:end) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)).^2) +...
-                        position_weight * sum(((F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)*headway_time + min_distance - leading_vehicle_predict_state(1:2:end-1)).^2) +...
-                        jerk_weight * sum(u_sequence(2:end) - u_sequence(1:end-1)).^2; % 目的関数を定義
+                        b(tau_k:end_step) = b(tau_k:end_step) + leading_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance_front; % 前方車両との距離制約を追加
+                        b(end_step+1:2*end_step-tau_k+1) = b(end_step+1:2*end_step-tau_k+1) - following_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance_rear; % 後続車両との距離制約を追加
+                        b(2*end_step-tau_k+2:3*end_step-tau_k+1) = b(2*end_step-tau_k+2:3*end_step-tau_k+1) + vehicle.MAX_VELOCITY;
+                        b(3*end_step-tau_k+2:end) = b(3*end_step-tau_k+2:end) - vehicle.MIN_VELOCITY;
 
+                        objective_function = @(u_sequence) weight.input * sum((exp(weight.delta*[end_step:-1:1])'.*u_sequence).^2) +...
+                        weight.velocity * sum((exp(weight.delta*[end_step:-1:tau_k])'.*(leading_vehicle_predict_state(2*tau_k-1:2:end) - (F_matrix(2*tau_k-1:2:end, :)*vehicle_state + G_matrix(2*tau_k-1:2:end, :)*u_sequence))).^2) +...
+                        weight.position * sum((exp(weight.delta*[end_step:-1:1])'.*(leading_vehicle_predict_state(1:2:end-1) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)*headway_time - min_distance)).^2) +...
+                        weight.end_position * sum((exp(weight.delta*[tau_k-1:-1:1])'.*(obj.onramp_end_position - (F_matrix(1:2:2*tau_k-2, :)*vehicle_state + G_matrix(1:2:2*tau_k-2, :)*u_sequence))).^2) +...
+                        weight.jerk * sum((exp(weight.delta*[end_step:-1:2])'.*(u_sequence(2:end) - u_sequence(1:end-1))).^2); % 目的関数を定義
                     else
+                        % ./(following_vehicle_predict_state(1:2:end-1) - (F_matrix(1:2:end-1, :)*vehicle_state + G_matrix(1:2:end-1, :)*u_sequence))
                         % 後続車両の後に合流する場合の制約条件
+
                         b(1:tau_k-1) = b(1:tau_k-1) + obj.onramp_end_position;
-                        b(tau_k:end_step) = b(tau_k:end_step) + following_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance; % 後続車両との距離制約を追加
-                        b(end_step+1:end) = b(end_step+1:end) - following_2nd_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance; % 2台目の後続車両との距離制約を追加
-                        objective_function = @(u_sequence) input_weight * sum(u_sequence.^2) +...
-                        velocity_weight * sum((following_vehicle_predict_state(2:2:end) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)).^2) +...
-                        position_weight * sum(((F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)*headway_time + min_distance - following_vehicle_predict_state(1:2:end-1)).^2) +...
-                        jerk_weight * sum(u_sequence(2:end) - u_sequence(1:end-1)).^2; % 目的関数を定義
+                        b(tau_k:end_step) = b(tau_k:end_step) + following_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance_front; % 後続車両との距離制約を追加
+                        b(end_step+1:2*end_step-tau_k+1) = b(end_step+1:2*end_step-tau_k+1) - following_2nd_vehicle_predict_state(2*tau_k-1:2:end-1) - threshold_distance_rear; % 2台目の後続車両との距離制約を追加
+                        b(2*end_step-tau_k+2:3*end_step-tau_k+1) = b(2*end_step-tau_k+2:3*end_step-tau_k+1) + vehicle.MAX_VELOCITY;
+                        b(3*end_step-tau_k+2:end) = b(3*end_step-tau_k+2:end) - vehicle.MIN_VELOCITY;
+
+                        objective_function = @(u_sequence) weight.input * sum((exp(weight.delta*[end_step:-1:1])'.*u_sequence).^2) +...
+                        weight.velocity * sum((exp(weight.delta*[end_step:-1:tau_k])'.*(following_vehicle_predict_state(2*tau_k-1:2:end) - (F_matrix(2*tau_k-1:2:end, :)*vehicle_state + G_matrix(2*tau_k-1:2:end, :)*u_sequence))).^2) +...
+                        weight.position * sum((exp(weight.delta*[end_step:-1:1])'.*(following_vehicle_predict_state(1:2:end-1) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)*headway_time - min_distance)).^2) +...]
+                        weight.end_position * sum((exp(weight.delta*[tau_k-1:-1:1])'.*(obj.onramp_end_position - (F_matrix(1:2:2*tau_k-2, :)*vehicle_state + G_matrix(1:2:2*tau_k-2, :)*u_sequence))).^2) +...
+                        weight.jerk * sum((exp(weight.delta*[end_step:-1:2])'.*(u_sequence(2:end) - u_sequence(1:end-1))).^2); % 目的関数を定義
                     end
 
-                    option = optimoptions('fmincon', 'Display', 'off'); % 最適化オプションを設定
+                    option = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp'); % 最適化オプションを設定
                     [optimal_u_sequence, cost, exitflag] = fmincon(objective_function, u0_sequence, A, b, [], [], lb, ub, [], option); % 最適化問題を解く
-                    if exitflag <= 0
+                    if exitflag < 0
                         cost = inf; % 最適化が失敗した場合はコストを無限大に設定
                     end
 
@@ -191,22 +206,72 @@ classdef Controller<handle
             [min_cost_each_gap optimal_tau] = min(total_costs, [], 2); % 各車線変更の最小コストを取得
             [min_cost, optimal_gap] = min(min_cost_each_gap); % 最小コストとそのインデックスを取得
 
-            if min_cost == inf
-                vehicle.change_isMergelane(false); % 車線変更を行わない
-                return;
-            end
-
             optimal_u_sequence = optimal_u_sequences{optimal_gap}{optimal_tau(optimal_gap)}; % 最小コストの制御入力シーケンスを取得
+            optimal_tau = tau_interval*(optimal_tau(optimal_gap) - 1);
 
-            if optimal_tau == 0
-                vehicle.change_isMergelane(true); % 車線変更を行う
+            if min_cost == inf
+                optimal_tau = -1;
             end
 
-            disp(['Optimal gap: ', num2str(optimal_gap), ', Optimal tau: ', num2str(optimal_tau(optimal_gap) - 1), ', Optimal Acceleration: ', num2str(optimal_u_sequence(1))]); % 最適な車線変更と時間ステップを表示
-
-            vehicle.change_input_acceleration(optimal_u_sequence(1)); % 車両の加速度を更新
+            disp(['Vehicle ID: ', vehicle.VEHICLE_ID]); % 車両IDを表示
+            % disp(['Vehicle ID: ', vehicle.VEHICLE_ID, ' is merging lane.']); % 車両IDを表示
+            disp(['Minimum cost: ', num2str(min_cost)]); % 最小コストを表示
+            disp(['Optimal gap: ', num2str(optimal_gap), ', Optimal tau: ', num2str(optimal_tau), ', Optimal Acceleration: ', num2str(optimal_u_sequence(1))]); % 最適な車線変更と時間ステップを表示
 
         end
+
+        function optimal_u_sequence = cruise_control_mpc(obj, vehicle, prediction_horizon, weight)
+            % 定速走行のためのMPCを使用して車両の加速度を計算
+            % vehicle: 対象車両オブジェクト
+            % prediction_horizon: 予測ホライズン
+
+            end_step = prediction_horizon / obj.time_step; % 予測ホライズンを時間ステップで割る
+            min_distance = 5; % 最小車間距離
+            threshold_distance = 30; % 車線変更のしきい値距離
+            headway_time = 3;
+
+            if isempty(vehicle.optimal_u_sequence)
+                u0_sequence = zeros(end_step, 1); % 前の制御入力シーケンスが空の場合はゼロで初期化
+            else
+                u0_sequence = [vehicle.optimal_u_sequence(2:end_step, :); 0]; % 前の制御入力シーケンスを使用して初期化
+            end
+
+            lb = vehicle.MIN_ACCELERATION * ones(end_step, 1); % 制御入力の下限
+            ub = vehicle.MAX_ACCELERATION * ones(end_step, 1); % 制御入力の上限
+
+            F_matrix = obj.get_F_matrix(prediction_horizon, obj.time_step); % 状態遷移行列を取得
+            G_matrix = obj.get_G_matrix(prediction_horizon, obj.time_step); % 制御入力行列を取得
+
+            % 車両の周囲の車両を取得
+            mainline_leading_vehicle = obj.vehicle_manager.find_leading_vehicle_in_lane(vehicle, 'Mainline');
+            mainline_following_vehicle = obj.vehicle_manager.find_following_vehicle_in_lane(vehicle, 'Mainline');
+
+            vehicle_state = [vehicle.position; vehicle.velocity]; % 対象車両の状態
+
+            leading_vehicle_predict_state = obj.predict_vehicle_future_state(mainline_leading_vehicle, prediction_horizon, zeros(end_step, 1)); % 前方車両の予測状態
+            following_vehicle_predict_state = obj.predict_vehicle_future_state(mainline_following_vehicle, prediction_horizon, zeros(end_step, 1)); % 後続車両の予測状態
+
+            A = [G_matrix(1:2:end-1, :); -G_matrix(1:2:end-1, :); G_matrix(2:2:end, :); -G_matrix(2:2:end, :)];
+            b = [-F_matrix(1:2:end-1, :) * vehicle_state; F_matrix(1:2:end-1, :) * vehicle_state; -F_matrix(2:2:end, :) * vehicle_state; F_matrix(2:2:end, :) * vehicle_state];
+
+            b(1:end_step) = b(1:end_step) + leading_vehicle_predict_state(1:2:end-1) - threshold_distance; % 前方車両との距離制約を追加
+            b(end_step+1:2*end_step) = b(end_step+1:2*end_step) - following_vehicle_predict_state(1:2:end-1) - threshold_distance; % 後続車両との距離制約を追加
+            b(2*end_step+1:3*end_step) = b(2*end_step+1:3*end_step) + vehicle.MAX_VELOCITY;
+            b(3*end_step+1:end) = b(3*end_step+1:end) - vehicle.MIN_VELOCITY;
+
+            objective_function = @(u_sequence) weight.input * sum((exp(weight.delta*[end_step:-1:1])'.*u_sequence).^2) +...
+            weight.velocity * sum((exp(weight.delta*[end_step:-1:1])'.*(leading_vehicle_predict_state(2:2:end) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence))).^2) +...
+            weight.position * sum((exp(weight.delta*[end_step:-1:1])'.*(leading_vehicle_predict_state(1:2:end-1) - (F_matrix(2:2:end, :)*vehicle_state + G_matrix(2:2:end, :)*u_sequence)*headway_time - min_distance)).^2) +...
+            weight.jerk * sum((exp(weight.delta*[end_step:-1:2])'.*(u_sequence(2:end) - u_sequence(1:end-1))).^2); % 目的関数を定義
+
+            option = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp'); % 最適化オプションを設定
+            optimal_u_sequence = fmincon(objective_function, u0_sequence, A, b, [], [], lb, ub, [], option); % 最適化問題を解く
+
+            % disp(['Vehicle ID: ', vehicle.VEHICLE_ID, ' is on cruise control.']); % 車両IDを表示
+            % disp(['Optimal Acceleration: ', num2str(optimal_u_sequence(1))]); % 最適な車線変更と時間ステップを表示
+
+        end
+
 
         function vehicle_next_state = predict_vehicle_next_state(obj, vehicle_state, input)
             % 車両の次の状態を予測する

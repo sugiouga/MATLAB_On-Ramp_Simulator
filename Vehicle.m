@@ -28,6 +28,15 @@ classdef Vehicle<handle
         isMergelane = false; % 車線変更フラグ
     end
 
+    properties(GetAccess = public, SetAccess = public)
+        % MPCの実行回数をカウントする変数
+        mpc_count = 0; % MPCの実行回数
+        mpc_start_time = []; % MPCの開始時間
+        optimal_u_sequence = []; % MPCの最適入力シーケンス
+        optimal_tau = []; % MPCの最適合流タイミング
+        target_position = []; % 車両の参照位置
+    end
+
     methods
         function obj = Vehicle(vehicle_id, vehicle_type, position, velocity, controller)
             % コンストラクタ
@@ -114,11 +123,7 @@ classdef Vehicle<handle
             m = 1680;
             P_T = max(0, d_1 * obj.velocity + d_2 * obj.velocity^2 + d_3 * obj.velocity^3 + 0.001 * m * obj.acceleration * obj.velocity);
             % 燃料消費量を計算する
-            if obj.acceleration <= 0
-                obj.fuel_consumption = obj.fuel_consumption + time_step * delta; % 燃料消費量を更新
-            else
-                obj.fuel_consumption = obj.fuel_consumption + time_step * (delta + gamma_1 * P_T + gamma_2 * 0.001 * m * obj.acceleration^2 * obj.velocity); % 燃料消費量を更新
-            end
+            obj.fuel_consumption = obj.fuel_consumption + time_step * (delta + gamma_1 * P_T + gamma_2 * 0.001 * m * max(0, obj.acceleration)^2 * obj.velocity); % 燃料消費量を更新
         end
     end
 end

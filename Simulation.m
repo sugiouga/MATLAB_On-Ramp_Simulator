@@ -6,7 +6,7 @@ classdef Simulation<handle
         % シミュレーションの開始時間
         start_time = 0;
         % シミュレーションの終了時間
-        end_time = 30;
+        end_time = 25;
         % シミュレーションの時間間隔
         time_step = 0.1;
         % シミュレーションのステップ数
@@ -28,9 +28,9 @@ classdef Simulation<handle
         % シミュレーションの終了フラグ
         is_end = false;
         % csvファイルに保存するかどうかのフラグ
-        is_save_csv = false;
+        is_save_csv = true;
         % 時系列データをグラフに保存するかどうかのフラグ
-        is_plot_time_series_data = false;
+        is_plot_time_series_data = true;
 
     end
 
