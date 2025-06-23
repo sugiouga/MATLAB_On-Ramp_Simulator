@@ -156,7 +156,7 @@ classdef Figure<handle
             ylabel('Position [m]');
 
             legend('show', 'Interpreter', 'none', 'Location', 'southeast'); % 右下に表示
-            ylim([0 simulation.mainline.end_position]); % Y軸の範囲を設定
+            ylim([simulation.mainline.start_position simulation.mainline.end_position]); % Y軸の範囲を設定
             grid on;
 
             % 速度のプロット
@@ -196,7 +196,7 @@ classdef Figure<handle
             xlabel('Time [s]');
             ylabel('Fuel Consumption [mL]');
             legend('show', 'Interpreter', 'none', 'Location', 'northwest'); % 左上に表示
-            ylim([0 100]); % Y軸の範囲を設定
+            ylim([0 120]); % Y軸の範囲を設定
             grid on;
 
             % MainLineの車両をプロット
