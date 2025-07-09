@@ -9,8 +9,10 @@ classdef Vehicle<handle
 
         MIN_VELOCITY = 0; % 車両の最小速度
         MAX_VELOCITY = 30; % 車両の最大速度
-        MIN_ACCELERATION = -3; % 車両の最小加速度
-        MAX_ACCELERATION = 2; % 車両の最大加速度
+        MIN_ACCELERATION = -5; % 車両の最小加速度
+        MAX_ACCELERATION = 5; % 車両の最大加速度
+        MIN_JERK = -2; % 車両の最小ジャーク
+        MAX_JERK = 2; % 車両の最大ジャーク
 
         % 車両の状態
         position = []; % 車両の位置
@@ -34,7 +36,9 @@ classdef Vehicle<handle
         mpc_start_time = []; % MPCの開始時間
         optimal_u_sequence = []; % MPCの最適入力シーケンス
         optimal_tau = []; % MPCの最適合流タイミング
+        optimal_gap = []; % MPCの最適合流位置
         target_position = []; % 車両の参照位置
+        prediction_horizon = []; % MPCの予測ホライズン
     end
 
     methods
