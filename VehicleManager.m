@@ -136,5 +136,17 @@ classdef VehicleManager<handle
             end
         end
 
+        % 特定の車両IDを持つ車両を取得
+        function vehicle = get_vehicle_by_id(obj, vehicle_id)
+            % vehicle_id: 車両ID
+            if startsWith(vehicle_id, 'Mainline')
+                vehicle = obj.mainline.vehicles(vehicle_id);
+            elseif startsWith(vehicle_id, 'On-ramp')
+                vehicle = obj.onramp.vehicles(vehicle_id);
+            else
+                error('Unknown VEHICLE ID');
+            end
+        end
+
     end
 end
