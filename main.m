@@ -18,9 +18,10 @@ onramp = Lane('On-ramp', onramp_start_position, onramp_end_position, onramp_refe
 % 車両管理オブジェクトの作成
 vehicle_manager = VehicleManager(mainline, onramp);
 
-initial_headway = [0 4 6 5 8 5 5 5 6]; % 初期車間距離 (秒)
+% initial_headway = [0 4 6 5 8 5 5 5 6]; % 初期車間距離 (秒)
 % initial_headway = [3.5 5.5 6 3 3];% 車両の生成
 % initial_headway = [0 1 5 6]; % 車両の生成
+initial_headway = [0 1.5 3 3 3 3];
 for i = 1 : length(initial_headway)
     % 本線に車両を追加
     mainline_vehicle_type = 'car'; % 車両タイプ

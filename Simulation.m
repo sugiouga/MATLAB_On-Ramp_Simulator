@@ -6,7 +6,7 @@ classdef Simulation<handle
         % シミュレーションの開始時間
         start_time = 0;
         % シミュレーションの終了時間
-        end_time = 60;
+        end_time = 30;
         % シミュレーションの時間間隔
         time_step = 0.1;
         % シミュレーションのステップ数
