@@ -11,8 +11,8 @@ classdef Vehicle<handle
         MAX_VELOCITY = 30; % 車両の最大速度
         MIN_ACCELERATION = -5; % 車両の最小加速度
         MAX_ACCELERATION = 5; % 車両の最大加速度
-        MIN_JERK = -2; % 車両の最小ジャーク
-        MAX_JERK = 2; % 車両の最大ジャーク
+        MIN_JERK = -0.5; % 車両の最小ジャーク
+        MAX_JERK = 0.5; % 車両の最大ジャーク
 
         % 車両の状態
         position = []; % 車両の位置

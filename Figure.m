@@ -68,19 +68,21 @@ classdef Figure<handle
             % x = 0 に藍色の線を引く
             plot([0, 0], [obj.MAINLINE_Y_OFFSET - 0.4, obj.ONRAMP_Y_OFFSET + 0.4], 'LineWidth', 2, 'Color', [0.2941 0.0000 0.5098]); % 藍色の線を描画
             % Launch MPC と表示（藍色）
-            text(0, obj.ONRAMP_Y_OFFSET + 0.5, 'Launch MPC', ...
+            % text(0, obj.ONRAMP_Y_OFFSET + 0.5, 'Launch MPC', ...
+            %     'FontSize', 12, 'FontWeight', 'bold', 'Color', [0.2941 0.0000 0.5098], 'HorizontalAlignment', 'center');
+            text(0, obj.ONRAMP_Y_OFFSET + 0.5, 'Launch MOBIL', ...
                 'FontSize', 12, 'FontWeight', 'bold', 'Color', [0.2941 0.0000 0.5098], 'HorizontalAlignment', 'center');
+
+            % % x = 100 に藍色の線を引く
+            % plot([200, 200], [obj.MAINLINE_Y_OFFSET - 0.4, obj.ONRAMP_Y_OFFSET + 0.4], 'LineWidth', 2, 'Color', [0.2941 0.0000 0.5098]); % 藍色の線を描画
+            % % Prediction horizon と表示（藍色）
+            % text(200, obj.ONRAMP_Y_OFFSET + 0.5, 'Prediction horizon', ...
+            %     'FontSize', 12, 'FontWeight', 'bold', 'Color', [0.2941 0.0000 0.5098], 'HorizontalAlignment', 'center');
 
             % x = 300 に藍色の線を引く
             plot([300, 300], [obj.MAINLINE_Y_OFFSET - 0.4, obj.ONRAMP_Y_OFFSET + 0.4], 'LineWidth', 2, 'Color', [0.2941 0.0000 0.5098]); % 藍色の線を描画
             % End of Merging lane と表示（藍色）
             text(300, obj.ONRAMP_Y_OFFSET + 0.5, 'End of Merging lane', ...
-                'FontSize', 12, 'FontWeight', 'bold', 'Color', [0.2941 0.0000 0.5098], 'HorizontalAlignment', 'center');
-
-            % x = 100 に藍色の線を引く
-            plot([100, 100], [obj.MAINLINE_Y_OFFSET - 0.4, obj.ONRAMP_Y_OFFSET + 0.4], 'LineWidth', 2, 'Color', [0.2941 0.0000 0.5098]); % 藍色の線を描画
-            % Prediction horizon と表示（藍色）
-            text(100, obj.ONRAMP_Y_OFFSET + 0.5, 'Prediction horizon', ...
                 'FontSize', 12, 'FontWeight', 'bold', 'Color', [0.2941 0.0000 0.5098], 'HorizontalAlignment', 'center');
 
             % 本線のタイトル
@@ -116,10 +118,10 @@ classdef Figure<handle
                 y = obj.MAINLINE_Y_OFFSET-0.05; % 本線のY座標
                 if contains(vehicle.VEHICLE_ID, 'Mainline')
                     vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0 0.4470 0.7410]);
-                    % vehicle_figure(end + 1) = plot(x-2, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 10, 'MarkerFaceColor', [0 0.4470 0.7410]);
+                    % vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0 0.4470 0.7410]);
                 elseif contains(vehicle.VEHICLE_ID, 'On-ramp')
                     vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
-                    % vehicle_figure(end + 1) = plot(x-2, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 10, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
+                    % vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
                 end
             end
 
@@ -129,8 +131,8 @@ classdef Figure<handle
                     x = vehicle.position; % 車両の位置
                     y = obj.ONRAMP_Y_OFFSET+0.05; % 合流車線のY座標
                     % y = obj.ONRAMP_Y_OFFSET - (obj.ONRAMP_Y_OFFSET - obj.MAINLINE_Y_OFFSET - 0.2) ./ (1 + exp(-0.02*(x - onramp.end_position / 2)));; % 合流車線のY座標
-                    vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 9, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
-                    % vehicle_figure(end + 1) = plot(x-2, y, 'sk', 'LineWidth',0.01, 'MarkerSize', 10, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
+                    vehicle_figure(end + 1) = plot(x, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
+                    % vehicle_figure(end + 1) = plot(x-1, y, 'sk', 'LineWidth',0.02, 'MarkerSize', 9, 'MarkerFaceColor', [0.8500 0.3250 0.0980]);
                 end
             end
 
@@ -228,6 +230,16 @@ classdef Figure<handle
             ylim([0 150]); % Y軸の範囲を設定
             grid on;
 
+            % 位置と目標位置の差分のプロット
+            figure(6);
+            hold on;
+            title('Position Error');
+            xlabel('Time [s]');
+            ylabel('Position Error [m]');
+            legend('show', 'Interpreter', 'none', 'Location', 'southeast');
+            ylim([-200 200]); % Y軸の範囲を設定
+            grid on;
+
             % MainLineの車両をプロット
             for i = 1:length(mainline_csv_files)
                 % ファイル名を取得
@@ -242,6 +254,7 @@ classdef Figure<handle
                 % 時間、位置、速度、加速度、ジャークを取得
                 Time = data.Time;
                 Position = data.Position;
+                Target_Position = data.Target_Position; % 目標位置
                 Velocity = data.Velocity;
                 Acceleration = data.Acceleration;
                 Jerk = data.Jerk;
@@ -296,6 +309,7 @@ classdef Figure<handle
                 % 時間、位置、速度、加速度、ジャークを取得
                 Time = data.Time;
                 Position = data.Position;
+                Target_Position = data.Target_Position; % 目標位置
                 Velocity = data.Velocity;
                 Acceleration = data.Acceleration;
                 Jerk = data.Jerk;
@@ -334,6 +348,11 @@ classdef Figure<handle
                 plot(Time, Fuel_Consumption, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
                     'DisplayName', ['On-ramp vehicle ' char(vehicle_id)]);
 
+                % 位置と目標位置の差分のプロット
+                figure(6);
+                plot(Time, Target_Position - Position, 'LineWidth', 2, 'LineStyle', line_style, 'Color', line_color, ...
+                    'DisplayName', ['On-ramp vehicle ' char(vehicle_id)]);
+
             end
 
             % 各プロットをPNGファイルとして保存
@@ -342,6 +361,7 @@ classdef Figure<handle
             saveas(figure(3), fullfile(result_folder, 'Acceleration.png'));
             saveas(figure(4), fullfile(result_folder, 'Jerk.png'));
             saveas(figure(5), fullfile(result_folder, 'FuelConsumption.png'));
+            saveas(figure(6), fullfile(result_folder, 'PositionError.png'));
 
         end
 

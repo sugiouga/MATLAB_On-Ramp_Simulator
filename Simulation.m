@@ -126,11 +126,11 @@ function save_vehicle_state_to_csv(vehicle, time, result_folder)
     filename = [result_folder, filesep, vehicle.VEHICLE_ID, '.csv'];
 
     % ビークルの状態を取得
-    data = {time, vehicle.position, vehicle.reference_position, vehicle.velocity, vehicle.reference_velocity, vehicle.acceleration, vehicle.input_acceleration, vehicle.jerk, vehicle.fuel_consumption, vehicle.controller, vehicle.lane_id};
+    data = {time, vehicle.position, vehicle.target_position, vehicle.velocity, vehicle.reference_velocity, vehicle.acceleration, vehicle.input_acceleration, vehicle.jerk, vehicle.fuel_consumption, vehicle.controller, vehicle.lane_id};
 
     % ヘッダーを追加 (ファイルが存在しない場合のみ)
     if exist(filename, 'file') ~= 2
-        header = {'Time', 'Position', 'Reference_Position', 'Velocity', 'Reference_Velocity', 'Acceleration', 'Input_Acceleration', 'Jerk', 'Fuel_Consumption', 'Controller', 'Lane_ID'};
+        header = {'Time', 'Position', 'Target_Position', 'Velocity', 'Reference_Velocity', 'Acceleration', 'Input_Acceleration', 'Jerk', 'Fuel_Consumption', 'Controller', 'Lane_ID'};
         fid = fopen(filename, 'w');
         fprintf(fid, '%s,', header{1,1:end-1});
         fprintf(fid, '%s\n', header{1,end});

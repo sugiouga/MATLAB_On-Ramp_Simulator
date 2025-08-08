@@ -4,22 +4,24 @@ clc
 
 % レーンの設定
 mainline_start_position = -100; % 本線の開始位置 (m)
-mainline_end_position = 500; % 本線の終了位置 (m)
+mainline_end_position = 400; % 本線の終了位置 (m)
 mainline_reference_velocity = 25; % 本線の参照速度 (m/s)
 onramp_start_position = -100; % 合流車線の開始位置 (m)
 onramp_end_position = 300; % 合流車線の終了位置 (m)
 onramp_reference_velocity = 20; % 合流車線の参照速度 (m/s)
 
 % レーンオブジェクトの作成
+
 mainline = Lane('Mainline', mainline_start_position, mainline_end_position, mainline_reference_velocity);
 onramp = Lane('On-ramp', onramp_start_position, onramp_end_position, onramp_reference_velocity);
 
 % 車両管理オブジェクトの作成
 vehicle_manager = VehicleManager(mainline, onramp);
 
-% initial_headway = [0 2.5 3 3 8 3 3]; % 初期車間距離 (秒)
-% initial_headway = [3.5 5.5 8 3 6 2 4 5];% 車両の生成
-initial_headway = [0 8 6 6]; % 車両の生成
+% initial_headway = [0 4 6 5 8 5 5 5 6]; % 初期車間距離 (秒)
+% initial_headway = [3.5 5.5 6 3 3];% 車両の生成
+% initial_headway = [0 1 5 6]; % 車両の生成
+initial_headway = [0 1.5 3 3 3 3];
 for i = 1 : length(initial_headway)
     % 本線に車両を追加
     mainline_vehicle_type = 'car'; % 車両タイプ
@@ -36,8 +38,9 @@ initial_headway2 = 0;
 for i = 1 : length(initial_headway2)
     % 合流車線に車両を追加
     onramp_vehicle_type = 'car'; % 車両タイプ
-    onramp_controller = 'MPC'; % 車両の制御器
+    onramp_controller = 'MOBIL'; % 車両の制御器
     onramp_distance = 100; % 車間距離を生成
+    % onramp_distance = initial_headway2(i) * onramp_reference_velocity; % 車間距離を生成
     vehicle_manager.generate_vehicle_in_lane(onramp_vehicle_type, onramp_controller, 'On-ramp', onramp_distance);
 end
 
@@ -79,15 +82,17 @@ while ~simulation.is_end
 
                     if vehicle.isMergelane == false && vehicle.position > 0
                         % 合流車線の車両で、まだ合流していない場合はMPCを適用
-                        vehicle.prediction_horizon = 5; % MPCの予測ホライズン (秒)
+                        vehicle.prediction_horizon = 10; % MPCの予測ホライズン (秒)
                         tau_interval = 1;% 合流タイミングの間隔 (秒)
                         weight.position = 0.001; % 位置の重み
+                        % weight.velocity = 0.05; % 速度の重み
                         weight.velocity = 0; % 速度の重み
-                        weight.input = 0.1; % 加速度の重み
+                        weight.input = 0.2; % 加速度の重み
                         weight.jerk = 0; % ジャークの重み
-                        weight.end_position = 0.003; % 合流車線の残りに関するの重み
+                        weight.end_position = 0.001; % 合流車線の残りに関するの重み
                         weight.fuel = 1;
                         weight.delta = 0.01; % 減衰の重み
+                        min_distance = 5; % 車間距離の最小値 (m)
 
                         if vehicle.mpc_count == 0
                             vehicle.mpc_start_time = simulation.time; % MPCの開始時間を記録
@@ -96,6 +101,14 @@ while ~simulation.is_end
                         if mod(vehicle.mpc_count, 10*tau_interval) == 0
                             vehicle.mpc_count = 1;
                             [vehicle.optimal_u_sequence, vehicle.optimal_tau vehicle.optimal_gap] = controller.lane_merge_mpc(vehicle, vehicle.prediction_horizon, tau_interval, weight);
+
+                            if vehicle.optimal_gap == 1
+                                leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, 'Mainline');
+                                leading_vehicle_id = leading_vehicle.VEHICLE_ID;
+                            else
+                                following_vehicle = vehicle_manager.find_following_vehicle_in_lane(vehicle, 'Mainline');
+                                following_vehicle_id = following_vehicle.VEHICLE_ID;
+                            end
                         end
 
                         vehicle.change_input_acceleration(vehicle.optimal_u_sequence(vehicle.mpc_count));
@@ -105,22 +118,30 @@ while ~simulation.is_end
                             vehicle.change_isMergelane(true); % 合流フラグを立てる
                         end
 
-                        headway_time = 3; % 車間距離の目標時間 (秒)
-                        leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, 'Mainline');
-                        vehicle.target_position = leading_vehicle.position + vehicle.velocity * headway_time; % 目標位置を更新
+                        headway_time = 1.5; % 車間距離の目標時間 (秒)
+                        if vehicle.optimal_gap == 1
+                            leading_vehicle = get_vehicle_by_id(vehicle_manager, leading_vehicle_id); % 先行車両を取得
+                            vehicle.target_position = leading_vehicle.position - vehicle.velocity * headway_time - min_distance; % 目標位置を更新
+                        else
+                            following_vehicle = get_vehicle_by_id(vehicle_manager, following_vehicle_id); % 後続車両を取得
+                            vehicle.target_position = following_vehicle.position - vehicle.velocity * headway_time - min_distance; % 目標位置を更新
+                        end
                     elseif vehicle.isMergelane == true && vehicle.position > 0
                         % 合流車線の車両で、合流済みの場合はMPCを適用
+
+                        % weight.velocity = 0.01;
                         vehicle.prediction_horizon = 3; % MPCの予測ホライズン (秒)
                         vehicle.optimal_u_sequence = controller.cruise_control_mpc(vehicle, vehicle.prediction_horizon, weight);
                         vehicle.change_input_acceleration(vehicle.optimal_u_sequence(1));
 
-                        headway_time = 3; % 車間距離の目標時間 (秒)
-                        leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, vehicle.lane_id);
-                        vehicle.target_position = leading_vehicle.position + vehicle.velocity * headway_time; % 目標位置を更新
+                        headway_time = 1.5; % 車間距離の目標時間 (秒)
+                        leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, 'Mainline'); % 先行車両を取得
+                        vehicle.target_position = leading_vehicle.position - vehicle.velocity * headway_time - min_distance; % 目標位置を更新
 
                     else
-                        leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, vehicle.lane_id);
-                        vehicle.change_input_acceleration(controller.idm(vehicle, leading_vehicle));
+                        % leading_vehicle = vehicle_manager.find_leading_vehicle_in_lane(vehicle, vehicle.lane_id);
+                        % vehicle.change_input_acceleration(controller.idm(vehicle, leading_vehicle));
+                        vehicle.change_input_acceleration(0);
                     end
             end
         end
